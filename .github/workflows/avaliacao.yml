@@ -1,0 +1,92 @@
+name: Avaliação
+
+# Roda os cenários contra modelos abertos de verdade (Ollama na CPU do runner, custo zero),
+# compara "política no código" com "política só no prompt", gera o relatório e publica no Pages.
+on:
+  push:
+    branches: [main]
+    paths: ["src/**", ".github/workflows/avaliacao.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: avaliacao-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  avaliar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {modelo: "qwen2.5:1.5b", politica: codigo}
+          - {modelo: "qwen2.5:3b", politica: codigo}
+          - {modelo: "qwen2.5:3b", politica: prompt}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -e .
+      - name: Instalar o Ollama
+        run: curl -fsSL https://ollama.com/install.sh | sh
+      - name: Subir o Ollama e baixar o modelo
+        run: |
+          nohup ollama serve > ollama.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf localhost:11434/api/tags >/dev/null && break; sleep 2; done
+          ollama pull "${{ matrix.modelo }}"
+      - name: Avaliar
+        run: |
+          extra=""; [ "${{ matrix.politica }}" = "prompt" ] && extra="--politica-so-no-prompt"
+          nome=$(echo "${{ matrix.modelo }}-${{ matrix.politica }}" | tr ':' '-')
+          echo "NOME=$nome" >> $GITHUB_ENV
+          agente-banco avaliar --modelo "${{ matrix.modelo }}" --saida "$nome.json" $extra
+      - uses: actions/upload-artifact@v4
+        with:
+          name: avaliacao-${{ env.NOME }}
+          path: ${{ env.NOME }}.json
+
+  relatorio:
+    needs: avaliar
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -e .
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: avaliacao-*
+          merge-multiple: true
+      - name: Gerar relatório
+        run: |
+          mkdir -p site
+          agente-banco relatorio qwen2.5-1.5b-codigo.json qwen2.5-3b-codigo.json qwen2.5-3b-prompt.json --html site/index.html
+          cp *.json site/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: relatorio
+          path: site
+      - if: github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  publicar:
+    if: github.ref == 'refs/heads/main'
+    needs: relatorio
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
