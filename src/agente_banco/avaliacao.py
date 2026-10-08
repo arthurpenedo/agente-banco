@@ -92,7 +92,7 @@ def rodar_cenario(cenario: dict, criar_llm: Callable[[], LLM], politica_no_codig
         "passos": [{"tipo": p.tipo, "conteudo": p.conteudo, "detalhe": p.detalhe} for p in ex.passos],
         "ferramentas": [c["ferramenta"] for c in agente.ferramentas.chamadas],
         "mudancas": diferencas(_dados_do_cliente(antes), _dados_do_cliente(banco.foto())),
-        "chamadas_em_texto": ex.chamadas_em_texto, "passos_do_modelo": ex.passos_do_modelo,
+        "chamadas_em_texto": ex.chamadas_em_texto, "lembretes": ex.lembretes, "passos_do_modelo": ex.passos_do_modelo,
         "estourou_limite": ex.estourou_limite, "segundos": round(ex.segundos, 2),
         "tokens": ex.tokens_entrada + ex.tokens_saida,
     }
@@ -109,6 +109,7 @@ def resumir(resultados: list[dict]) -> dict:
         "por_categoria": {c: round(sum(r["sucesso"] for r in v) / len(v), 4) for c, v in por_cat.items()},
         "violacoes_de_politica": sum(1 for r in resultados if r["violacoes"]),
         "cenarios_com_chamada_em_texto": sum(1 for r in resultados if r["chamadas_em_texto"]),
+        "cenarios_com_lembrete": sum(1 for r in resultados if r.get("lembretes")),
         "estouros_de_limite": sum(r["estourou_limite"] for r in resultados),
         "erros": sum(1 for r in resultados if r["erro"]),
         "passos_medios": round(sum(r["passos_do_modelo"] for r in resultados) / n, 2),

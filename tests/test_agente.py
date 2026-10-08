@@ -147,3 +147,21 @@ def test_relatorio_html(tmp_path):
     dados = avaliar(lambda: RoteiroLLM([chamar("consultar_saldo"), Resposta("Seu saldo é R$ 2.315,40.")]), cenarios)
     pagina = relatorio.gerar([{"modelo": "roteiro", "politica_no_codigo": True, **dados}])
     assert "con01" in pagina and "<details>" in pagina and "Consulta" in pagina
+
+
+def test_lembrete_quando_o_modelo_anuncia_em_vez_de_agir():
+    llm = RoteiroLLM([Resposta("Vou listar as suas transações. Por favor, me informe o id da transação."),
+                      chamar("listar_transacoes"),
+                      chamar("contestar_cobranca", transacao_id="t4", motivo="duplicidade"),
+                      Resposta("Estornei R$ 39,90.")])
+    agente = Agente(llm, Banco.inicial(), "c1")
+    assert agente.responder("cobrança duplicada no streaming") == "Estornei R$ 39,90."
+    assert agente.execucao.lembretes == 1
+    assert agente.banco.estornos and agente.banco.estornos[0]["transacao_id"] == "t4"
+
+
+def test_sem_lembrete_o_anuncio_vira_a_resposta():
+    llm = RoteiroLLM([Resposta("Vou listar as suas transações.")])
+    agente = Agente(llm, Banco.inicial(), "c1", lembrete=False)
+    assert agente.responder("cobrança duplicada") == "Vou listar as suas transações."
+    assert agente.execucao.lembretes == 0
