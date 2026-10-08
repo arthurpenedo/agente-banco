@@ -39,7 +39,7 @@ _ANUNCIO_SEM_ACAO = re.compile(
     r"\b(vou|vamos|irei|deixa eu|deixe-me|preciso)\s+(primeiro\s+)?(consultar|listar|verificar|checar|buscar|"
     r"localizar|identificar|do id|de o id|o id|o numero do|o número do)|\b(id|identificador) d[ao] (transa|boleto|cart)"
     r"|informe o id|me (passe|informe|diga) o id|liste os ids?"
-    r"|(vou|irei) usar a (fun[cç][aã]o|ferramenta)|precisamos (primeiro )?(listar|consultar|verificar|buscar)",
+    r"|(?:^|\W)(vou|irei) usar a (fun[cç][aã]o|ferramenta)|(?:^|\W)precisamos (primeiro )?(listar|consultar|verificar|buscar)",
     re.IGNORECASE,
 )
 
