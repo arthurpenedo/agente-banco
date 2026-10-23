@@ -7,7 +7,12 @@ from agente_banco.avaliacao import carregar_cenarios, rodar_cenario
 from agente_banco.banco import Banco
 from agente_banco.busca import BM25, carregar_trechos
 from agente_banco.ferramentas import ESQUEMAS, NOMES, Ferramentas
-from agente_banco.llm import ChamadaFerramenta, Resposta, RoteiroLLM, _chamada_escrita_como_texto
+from agente_banco.llm import (
+    ChamadaFerramenta,
+    Resposta,
+    RoteiroLLM,
+    _chamada_escrita_como_texto,
+)
 
 
 def chamar(nome: str, **args) -> Resposta:
