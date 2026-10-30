@@ -198,3 +198,15 @@ def test_busca_ignora_acento_e_respeita_k_e_nota_zero():
     assert len(busca.buscar("estorno de cobrança", k=1)) == 1
     assert busca.buscar("zzzz qqqq") == []
     assert busca.buscar("ESTÓRNO") == busca.buscar("estorno")
+
+
+def test_relatorio_html_escapa_texto_vindo_do_modelo():
+    from agente_banco import relatorio
+    from agente_banco.avaliacao import avaliar
+
+    perigoso = "<script>alert(1)</script>"
+    cenarios = carregar_cenarios()[:1]
+    dados = avaliar(lambda: RoteiroLLM([Resposta(perigoso)]), cenarios)
+    pagina = relatorio.gerar([{"modelo": perigoso, "politica_no_codigo": True, **dados}])
+    assert "<script>alert" not in pagina
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in pagina
