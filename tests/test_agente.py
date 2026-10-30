@@ -170,3 +170,31 @@ def test_sem_lembrete_o_anuncio_vira_a_resposta():
     agente = Agente(llm, Banco.inicial(), "c1", lembrete=False)
     assert agente.responder("cobrança duplicada") == "Vou listar as suas transações."
     assert agente.execucao.lembretes == 0
+
+
+# ---------------------------------------------------------------- banco.diferencas e busca
+
+def test_diferencas_lista_so_o_que_mudou():
+    from agente_banco.banco import diferencas
+
+    antes = {"saldo": 10, "itens": [1, 2], "fixo": "x"}
+    depois = {"saldo": 8, "itens": [1, 2, 3], "fixo": "x"}
+    assert diferencas(antes, depois) == ["itens[2]: None -> 3", "saldo: 10 -> 8"]
+    assert diferencas(antes, antes) == []
+
+
+def test_foto_e_copia_independente_do_banco():
+    from agente_banco.banco import diferencas
+
+    banco = Banco.inicial()
+    antes = banco.foto()
+    banco.clientes["c1"].saldo -= 100
+    assert antes["clientes"]["c1"]["saldo"] == 2315.40
+    assert len(diferencas(antes, banco.foto())) == 1
+
+
+def test_busca_ignora_acento_e_respeita_k_e_nota_zero():
+    busca = BM25(carregar_trechos())
+    assert len(busca.buscar("estorno de cobrança", k=1)) == 1
+    assert busca.buscar("zzzz qqqq") == []
+    assert busca.buscar("ESTÓRNO") == busca.buscar("estorno")
