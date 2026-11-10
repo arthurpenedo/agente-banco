@@ -13,7 +13,10 @@ from collections import Counter
 from dataclasses import dataclass
 from importlib import resources
 
-_PARADAS = set("a o e de da do das dos em no na nos nas um uma para por com que se ao à os as é ou não mais".split())
+_PARADAS = {
+    "a", "o", "e", "de", "da", "do", "das", "dos", "em", "no", "na", "nos", "nas", "um", "uma",
+    "para", "por", "com", "que", "se", "ao", "à", "os", "as", "é", "ou", "não", "mais",
+}
 
 
 def _tokens(texto: str) -> list[str]:
