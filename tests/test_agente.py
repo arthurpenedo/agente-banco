@@ -210,3 +210,30 @@ def test_relatorio_html_escapa_texto_vindo_do_modelo():
     pagina = relatorio.gerar([{"modelo": perigoso, "politica_no_codigo": True, **dados}])
     assert "<script>alert" not in pagina
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in pagina
+
+
+def test_leituras_listam_transacoes_cartoes_e_boletos():
+    f = ferramentas()
+    assert {c["final"] for c in json.loads(f.executar("listar_cartoes", {}))["cartoes"]} == {"8820", "1934"}
+    assert {b["id"] for b in json.loads(f.executar("listar_boletos", {}))["boletos"]} == {"b1", "b2"}
+    assert json.loads(f.executar("listar_transacoes", {}))["transacoes"][0]["id"]
+
+
+def test_bloquear_cartao_inexistente_ou_ja_bloqueado():
+    f = ferramentas("c2")
+    ja = json.loads(f.executar("bloquear_cartao", {"final_cartao": "5520"}))
+    assert ja["ok"] and "já estava bloqueado" in ja["aviso"]
+    # cartão de outro cliente: não revela que existe
+    outro = json.loads(f.executar("bloquear_cartao", {"final_cartao": "8820"}))
+    assert "erro" in outro and "ok" not in outro
+
+
+def test_segunda_via_regras_de_boleto_pago_e_limite():
+    f = ferramentas()
+    pago = json.loads(f.executar("emitir_segunda_via", {"boleto_id": "b2"}))
+    assert "já pago" in pago["erro"]
+    inexistente = json.loads(f.executar("emitir_segunda_via", {"boleto_id": "b3"}))  # boleto da Ana
+    assert "não encontrado" in inexistente["erro"]
+    for _ in range(3):
+        assert json.loads(f.executar("emitir_segunda_via", {"boleto_id": "b1"}))["ok"]
+    assert "limite de 3" in json.loads(f.executar("emitir_segunda_via", {"boleto_id": "b1"}))["erro"]
