@@ -59,7 +59,7 @@ class BM25:
     def buscar(self, pergunta: str, k: int = 3) -> list[tuple[Trecho, float]]:
         consulta = _tokens(pergunta)
         notas = []
-        for trecho, doc in zip(self.trechos, self.docs):
+        for trecho, doc in zip(self.trechos, self.docs, strict=True):
             freq = Counter(doc)
             nota = 0.0
             for tok in consulta:
