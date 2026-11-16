@@ -237,3 +237,12 @@ def test_segunda_via_regras_de_boleto_pago_e_limite():
     for _ in range(3):
         assert json.loads(f.executar("emitir_segunda_via", {"boleto_id": "b1"}))["ok"]
     assert "limite de 3" in json.loads(f.executar("emitir_segunda_via", {"boleto_id": "b1"}))["erro"]
+
+
+def test_motivo_fora_do_enum_e_recusado_sem_mexer_no_estado():
+    f = ferramentas()
+    r = json.loads(f.executar("contestar_cobranca", {"transacao_id": "t4", "motivo": "porque_sim"}))
+    assert "motivo inválido" in r["erro"]
+    assert not f.banco.estornos
+    r = json.loads(f.executar("bloquear_cartao", {"final_cartao": "4417", "motivo": "tedio"}))
+    assert "motivo inválido" in r["erro"]

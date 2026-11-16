@@ -17,6 +17,8 @@ from .busca import BM25, carregar_trechos
 
 ALCADA_ESTORNO = 100.00
 TARIFAS_CONTRATUAIS = ("pacote de serviços", "anuidade")
+MOTIVOS_BLOQUEIO = ("perda", "roubo", "fraude", "outro")
+MOTIVOS_CONTESTACAO = ("duplicidade", "nao_reconhecida", "indevida")
 
 ESQUEMAS = [
     {"type": "function", "function": {
@@ -117,6 +119,8 @@ class Ferramentas:
 
     # ------------------------------------------------------------------ ações
     def _bloquear_cartao(self, final_cartao: str, motivo: str = "outro") -> dict:
+        if motivo not in MOTIVOS_BLOQUEIO:  # o enum do esquema é só sugestão: o modelo pode mandar outra coisa
+            return {"erro": f"motivo inválido; use um de {list(MOTIVOS_BLOQUEIO)}"}
         cartao = next((c for c in self._cliente.cartoes if c.final == str(final_cartao).strip()[-4:]), None)
         if cartao is None:
             # o cartão não é deste cliente: não confirmamos nem negamos que exista
@@ -140,6 +144,8 @@ class Ferramentas:
         return {"ok": True, "boleto": boleto.id, "linha_digitavel": f"34191.79001 01043.51004 {boleto.id.upper()}"}
 
     def _contestar_cobranca(self, transacao_id: str, motivo: str) -> dict:
+        if motivo not in MOTIVOS_CONTESTACAO:
+            return {"erro": f"motivo inválido; use um de {list(MOTIVOS_CONTESTACAO)}"}
         transacao = next((t for t in self._cliente.transacoes if t.id == transacao_id), None)
         if transacao is None:
             return {"erro": "transação não encontrada para este cliente"}
