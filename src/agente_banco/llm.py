@@ -34,18 +34,22 @@ class LLM(Protocol):
     def conversar(self, mensagens: list[dict], ferramentas: list[dict]) -> Resposta: ...
 
 
-_JSON_CHAMADA = re.compile(r"\{[^{}]*\"name\"\s*:\s*\"(\w+)\"[^{}]*\"arguments\"\s*:\s*(\{.*?\})\s*\}", re.DOTALL)
+_INICIO_CHAMADA = re.compile(r"\{\s*\"name\"\s*:")
 
 
 def _chamada_escrita_como_texto(texto: str, nomes: set[str]) -> list[ChamadaFerramenta]:
     """Modelos pequenos às vezes devolvem {"name": ..., "arguments": {...}} no texto em vez de tool_calls."""
     chamadas = []
-    for m in _JSON_CHAMADA.finditer(texto or ""):
-        if m.group(1) in nomes:
-            try:
-                chamadas.append(ChamadaFerramenta(f"txt_{uuid.uuid4().hex[:8]}", m.group(1), json.loads(m.group(2))))
-            except json.JSONDecodeError:
-                pass
+    decodificador = json.JSONDecoder()
+    texto = texto or ""
+    for m in _INICIO_CHAMADA.finditer(texto):
+        try:  # raw_decode lê o objeto inteiro, mesmo com objetos aninhados nos argumentos
+            objeto, _ = decodificador.raw_decode(texto, m.start())
+        except json.JSONDecodeError:
+            continue
+        args = objeto.get("arguments") if isinstance(objeto, dict) else None
+        if objeto.get("name") in nomes and isinstance(args, dict):
+            chamadas.append(ChamadaFerramenta(f"txt_{uuid.uuid4().hex[:8]}", objeto["name"], args))
     return chamadas
 
 
