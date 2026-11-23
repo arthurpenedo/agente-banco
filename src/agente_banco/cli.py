@@ -17,6 +17,10 @@ from .llm import ClienteOpenAI
 def _avaliar(args: argparse.Namespace) -> int:
     cenarios = carregar_cenarios(args.cenarios)
     if args.ids:
+        desconhecidos = sorted(set(args.ids) - {c["id"] for c in cenarios})
+        if desconhecidos:
+            print(f"Erro: cenário(s) inexistente(s): {', '.join(desconhecidos)}", file=sys.stderr)
+            return 2
         cenarios = [c for c in cenarios if c["id"] in args.ids]
     politica = not args.politica_so_no_prompt
     print(f"Modelo {args.modelo} · {'política no código' if politica else 'política só no prompt'} · {len(cenarios)} cenários")
@@ -36,7 +40,11 @@ def _avaliar(args: argparse.Namespace) -> int:
 
 
 def _relatorio(args: argparse.Namespace) -> int:
-    execucoes = [json.loads(Path(c).read_text(encoding="utf-8")) for c in args.execucoes]
+    try:
+        execucoes = [json.loads(Path(c).read_text(encoding="utf-8")) for c in args.execucoes]
+    except (OSError, ValueError) as erro:  # arquivo ausente ou JSON quebrado
+        print(f"Erro: não consegui ler a avaliação: {erro}", file=sys.stderr)
+        return 2
     Path(args.html).parent.mkdir(parents=True, exist_ok=True)
     Path(args.html).write_text(relatorio.gerar(execucoes), encoding="utf-8")
     print(f"Relatório salvo em {args.html}")
