@@ -26,3 +26,12 @@ def test_relatorio_com_json_quebrado_devolve_2(capsys, tmp_path):
     ruim = tmp_path / "ruim.json"
     ruim.write_text("{nao é json", encoding="utf-8")
     assert main(["relatorio", str(ruim), "--html", str(tmp_path / "o.html")]) == 2
+
+
+def test_saida_e_html_apontando_para_pasta_devolvem_2(capsys, tmp_path):
+    assert main(["avaliar", "--saida", str(tmp_path)]) == 2
+    assert "--saida" in capsys.readouterr().err
+    exec_ok = tmp_path / "e.json"
+    exec_ok.write_text("{}", encoding="utf-8")
+    assert main(["relatorio", str(exec_ok), "--html", str(tmp_path)]) == 2
+    assert "--html" in capsys.readouterr().err

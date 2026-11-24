@@ -29,6 +29,9 @@ def _avaliar(args: argparse.Namespace) -> int:
             print(f"Erro: cenário(s) inexistente(s): {', '.join(desconhecidos)}", file=sys.stderr)
             return 2
         cenarios = [c for c in cenarios if c["id"] in args.ids]
+    if Path(args.saida).is_dir():  # descobrir só no fim de uma avaliação longa perderia tudo
+        print(f"Erro: --saida aponta para uma pasta, passe um arquivo: {args.saida}", file=sys.stderr)
+        return 2
     politica = not args.politica_so_no_prompt
     print(f"Modelo {args.modelo} · {'política no código' if politica else 'política só no prompt'} · {len(cenarios)} cenários")
 
@@ -51,6 +54,9 @@ def _relatorio(args: argparse.Namespace) -> int:
         execucoes = [json.loads(Path(c).read_text(encoding="utf-8")) for c in args.execucoes]
     except (OSError, ValueError) as erro:  # arquivo ausente ou JSON quebrado
         print(f"Erro: não consegui ler a avaliação: {erro}", file=sys.stderr)
+        return 2
+    if Path(args.html).is_dir():
+        print(f"Erro: --html aponta para uma pasta, passe um arquivo: {args.html}", file=sys.stderr)
         return 2
     Path(args.html).parent.mkdir(parents=True, exist_ok=True)
     Path(args.html).write_text(relatorio.gerar(execucoes), encoding="utf-8")
