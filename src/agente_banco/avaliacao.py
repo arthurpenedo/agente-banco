@@ -130,4 +130,5 @@ def avaliar(criar_llm: Callable[[], LLM], cenarios: list[dict], politica_no_codi
 
 def salvar(caminho: str | Path, modelo: str, politica_no_codigo: bool, dados: dict) -> None:
     saida = {"modelo": modelo, "politica_no_codigo": politica_no_codigo, **dados}
+    Path(caminho).parent.mkdir(parents=True, exist_ok=True)  # não perder uma avaliação longa por falta de pasta
     Path(caminho).write_text(json.dumps(saida, ensure_ascii=False, indent=1), encoding="utf-8")

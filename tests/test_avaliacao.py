@@ -65,3 +65,9 @@ def test_avaliar_chama_progresso_e_salvar_grava_json(tmp_path):
     salvar(tmp_path / "s.json", "modelo-x", True, dados)
     lido = json.loads((tmp_path / "s.json").read_text(encoding="utf-8"))
     assert lido["modelo"] == "modelo-x" and lido["politica_no_codigo"] is True
+
+
+def test_salvar_cria_a_pasta_da_saida(tmp_path):
+    destino = tmp_path / "resultados" / "nova" / "s.json"
+    salvar(destino, "modelo-x", True, {"resumo": {}})
+    assert json.loads(destino.read_text(encoding="utf-8"))["modelo"] == "modelo-x"
