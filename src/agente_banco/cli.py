@@ -15,7 +15,14 @@ from .llm import ClienteOpenAI
 
 
 def _avaliar(args: argparse.Namespace) -> int:
-    cenarios = carregar_cenarios(args.cenarios)
+    try:
+        cenarios = carregar_cenarios(args.cenarios)
+    except (OSError, ValueError, KeyError, TypeError) as erro:  # arquivo ausente, YAML quebrado ou sem `id`
+        print(f"Erro: não consegui ler os cenários: {erro}", file=sys.stderr)
+        return 2
+    if args.ids is not None and not args.ids:  # `--ids` sozinho rodava todos os cenários
+        print("Erro: --ids precisa de pelo menos um cenário.", file=sys.stderr)
+        return 2
     if args.ids:
         desconhecidos = sorted(set(args.ids) - {c["id"] for c in cenarios})
         if desconhecidos:
