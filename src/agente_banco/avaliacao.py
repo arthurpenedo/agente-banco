@@ -21,6 +21,8 @@ def carregar_cenarios(caminho: str | Path | None = None) -> list[dict]:
     texto = Path(caminho).read_text(encoding="utf-8") if caminho else (
         resources.files("agente_banco").joinpath("cenarios.yaml").read_text(encoding="utf-8"))
     cenarios = yaml.safe_load(texto)
+    if not isinstance(cenarios, list) or not cenarios:
+        raise ValueError("o arquivo de cenários está vazio ou não é uma lista de cenários")
     ids = [c["id"] for c in cenarios]
     if len(ids) != len(set(ids)):
         raise ValueError("ids de cenário repetidos")
