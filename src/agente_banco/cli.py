@@ -32,6 +32,10 @@ def _avaliar(args: argparse.Namespace) -> int:
     if Path(args.saida).is_dir():  # descobrir só no fim de uma avaliação longa perderia tudo
         print(f"Erro: --saida aponta para uma pasta, passe um arquivo: {args.saida}", file=sys.stderr)
         return 2
+    if any(p.is_file() for p in Path(args.saida).parents):  # senão só falharia depois de rodar o modelo
+        print(f"Erro: --saida passa por um arquivo, passe um caminho dentro de uma pasta: {args.saida}",
+              file=sys.stderr)
+        return 2
     politica = not args.politica_so_no_prompt
     print(f"Modelo {args.modelo} · {'política no código' if politica else 'política só no prompt'} · {len(cenarios)} cenários")
 
@@ -57,6 +61,10 @@ def _relatorio(args: argparse.Namespace) -> int:
         return 2
     if Path(args.html).is_dir():
         print(f"Erro: --html aponta para uma pasta, passe um arquivo: {args.html}", file=sys.stderr)
+        return 2
+    if any(p.is_file() for p in Path(args.html).parents):
+        print(f"Erro: --html passa por um arquivo, passe um caminho dentro de uma pasta: {args.html}",
+              file=sys.stderr)
         return 2
     Path(args.html).parent.mkdir(parents=True, exist_ok=True)
     Path(args.html).write_text(relatorio.gerar(execucoes), encoding="utf-8")

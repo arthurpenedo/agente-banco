@@ -35,3 +35,14 @@ def test_saida_e_html_apontando_para_pasta_devolvem_2(capsys, tmp_path):
     exec_ok.write_text("{}", encoding="utf-8")
     assert main(["relatorio", str(exec_ok), "--html", str(tmp_path)]) == 2
     assert "--html" in capsys.readouterr().err
+
+
+def test_saida_e_html_dentro_de_arquivo_devolvem_2_antes_de_rodar_o_modelo(capsys, tmp_path):
+    arq = tmp_path / "arq.txt"
+    arq.write_text("x", encoding="utf-8")
+    assert main(["avaliar", "--saida", str(arq / "x.json")]) == 2
+    assert "passa por um arquivo" in capsys.readouterr().err
+    exec_ok = tmp_path / "e.json"
+    exec_ok.write_text("{}", encoding="utf-8")
+    assert main(["relatorio", str(exec_ok), "--html", str(arq / "o.html")]) == 2
+    assert "passa por um arquivo" in capsys.readouterr().err
