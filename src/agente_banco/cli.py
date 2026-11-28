@@ -56,7 +56,7 @@ def _avaliar(args: argparse.Namespace) -> int:
 def _relatorio(args: argparse.Namespace) -> int:
     try:
         execucoes = [json.loads(Path(c).read_text(encoding="utf-8")) for c in args.execucoes]
-    except (OSError, ValueError) as erro:  # arquivo ausente ou JSON quebrado
+    except (OSError, ValueError, RecursionError) as erro:  # arquivo ausente, JSON quebrado ou aninhado demais
         print(f"Erro: não consegui ler a avaliação: {erro}", file=sys.stderr)
         return 2
     if Path(args.html).is_dir():
@@ -66,6 +66,11 @@ def _relatorio(args: argparse.Namespace) -> int:
         print(f"Erro: --html passa por um arquivo, passe um caminho dentro de uma pasta: {args.html}",
               file=sys.stderr)
         return 2
+    for caminho, e in zip(args.execucoes, execucoes):
+        if not isinstance(e, dict) or not isinstance(e.get("resumo"), dict) or "modelo" not in e:
+            print(f"Erro: {caminho} não é uma avaliação salva por `avaliar --saida` (faltam `modelo` e `resumo`).",
+                  file=sys.stderr)
+            return 2
     Path(args.html).parent.mkdir(parents=True, exist_ok=True)
     Path(args.html).write_text(relatorio.gerar(execucoes), encoding="utf-8")
     print(f"Relatório salvo em {args.html}")

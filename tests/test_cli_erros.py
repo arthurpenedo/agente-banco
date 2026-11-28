@@ -28,6 +28,17 @@ def test_relatorio_com_json_quebrado_devolve_2(capsys, tmp_path):
     assert main(["relatorio", str(ruim), "--html", str(tmp_path / "o.html")]) == 2
 
 
+def test_relatorio_com_json_valido_mas_sem_resumo_ou_aninhado_demais_devolve_2(capsys, tmp_path):
+    for nome, conteudo, trecho in (("vazio", "{}", "não é uma avaliação salva"),
+                                   ("lista", "[1]", "não é uma avaliação salva"),
+                                   ("fundo", "[" * 5000, "não consegui ler")):
+        arq = tmp_path / f"{nome}.json"
+        arq.write_text(conteudo, encoding="utf-8")
+        assert main(["relatorio", str(arq), "--html", str(tmp_path / "o.html")]) == 2
+        assert trecho in capsys.readouterr().err
+    assert not (tmp_path / "o.html").exists()
+
+
 def test_saida_e_html_apontando_para_pasta_devolvem_2(capsys, tmp_path):
     assert main(["avaliar", "--saida", str(tmp_path)]) == 2
     assert "--saida" in capsys.readouterr().err
